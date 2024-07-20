@@ -1,0 +1,109 @@
+## Default values for base.
+## See values-example.yaml for example values
+replicaCount: 1
+kind: Deployment
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: "backend"
+
+# Shared container variables (merged)
+shared: {}
+
+initContainers:
+  - name: wait-for-psql-http
+    image:
+      repository: alpine
+      pullPolicy: IfNotPresent
+      tag: "3.14"
+      command: ["sh"]
+      args: ["-c", "until nslookup psql-http.default.svc.cluster.local; do echo waiting for psql-http.default.svc.cluster.local; sleep 5s; done"]
+
+containers:
+  - image:
+      repository: mariomario77/hotelmanager-spring
+      pullPolicy: IfNotPresent
+      tag: "1.0.0"
+    ports:
+      - name: http
+        containerPort: 8080
+      - name: actuator
+        containerPort: 8081
+    volumeMounts: []
+    env:  
+      - name: SPRING_JPA_GENERATE_DDL
+        value: "true"
+      - name: LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_JDBC_DATASOURCE_INIT_DATASOURCEINITIALIZER
+        value: DEBUG
+      - name: SPRING_JPA_DEFER_DATASOURCE_INITIALIZATION
+        value: "true"
+      - name: SPRING_DATASOURCE_INITIALIZATION_MODE
+        value: always
+      - name: SPRING_JPA_HIBERNATE_DDL_AUTO
+        value: create-drop
+      - name: SPRING_DATASOURCE_URL
+        value: jdbc:postgresql://psql-http.default.svc.cluster.local:5432/hotelmanager
+      - name: SPRING_PROFILES_ACTIVE
+        value: local
+      - name: SPRING_DATASOURCE_USERNAME
+        value: user
+      - name: SPRING_DATASOURCE_PASSWORD
+        valueFrom:
+          secretKeyRef:
+            name: database-password
+            key: SPRING_DATASOURCE_PASSWORD
+    livenessProbe:
+      httpGet:
+        port: actuator
+        path: /actuator/health
+      timeoutSeconds: 1
+      periodSeconds: 10
+      successThreshold: 1
+      failureThreshold: 3
+      initialDelaySeconds: 10
+    readinessProbe:
+      httpGet:
+        port: actuator
+        path: /actuator/health
+      timeoutSeconds: 1
+      periodSeconds: 10
+      successThreshold: 1
+      failureThreshold: 3
+      initialDelaySeconds: 10
+
+volumes:
+  - name: database-password
+    secret:
+      name: database-password
+
+configmaps: []
+
+secrets:
+  - name: database-password
+    data:
+      SPRING_DATASOURCE_PASSWORD: pass
+
+persistence:
+  storageClass: ""
+
+services:
+  - name: http
+    ports:
+      - port: 8080
+
+prometheus:
+  serviceMonitor:
+    enabled: false
+
+# Pod-level
+serviceAccount:
+  create: false
+  annotations: {}
+# If not set and create is true, a name is generated using the fullname template
+#  name: ""
+
+annotations: {}
+securityContext: {}
+nodeSelector: {}
+tolerations: []
+affinity: {}

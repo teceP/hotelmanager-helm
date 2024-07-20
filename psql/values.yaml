@@ -1,0 +1,76 @@
+## Default values for base.
+## See values-example.yaml for example values
+replicaCount: 1
+kind: StatefulSet #Deployment
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: "psql"
+
+strategyType: ""
+
+# Shared container variables (merged)
+shared: {}
+
+initContainers: []
+
+containers:
+  - image:
+      repository: postgres
+      pullPolicy: Always
+      tag: "16.3"
+    ports:
+      - name: http
+        containerPort: 5432
+    env:
+      - name: POSTGRES_USER
+        value: user
+      - name: POSTGRES_DB
+        value: hotelmanager
+      - name: POSTGRES_PASSWORD
+        valueFrom:
+          secretKeyRef:
+            name: psql-password
+            key: POSTGRES_PASSWORD
+    volumeMounts:
+      - name: psql-data
+        mountPath: /var/lib/postgresql/data
+
+volumes:
+  - name: psql-data
+    persistence:
+      accessModes:
+        - ReadWriteOnce
+      size: 1Gi
+
+configmaps: []
+
+secrets:
+  - name: psql-password
+    data:
+      POSTGRES_PASSWORD: pass
+
+persistence:
+  storageClass: ""
+
+services:
+  - name: http
+    ports:
+      - port: 5432
+
+prometheus:
+  serviceMonitor:
+    enabled: false
+
+# Pod-level
+serviceAccount:
+  create: true
+  annotations: {}
+# If not set and create is true, a name is generated using the fullname template
+#  name: ""
+
+annotations: {}
+securityContext: {}
+nodeSelector: {}
+tolerations: []
+affinity: {}

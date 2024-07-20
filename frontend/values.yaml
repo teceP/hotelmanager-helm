@@ -1,0 +1,82 @@
+## Default values for base.
+## See values-example.yaml for example values
+replicaCount: 1
+kind: Deployment
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: "frontend"
+
+# Shared container variables (merged)
+shared: {}
+
+initContainers:
+  - name: wait-for-backend-http
+    image:
+      repository: alpine
+      pullPolicy: IfNotPresent
+      tag: "3.14"
+      command: ["sh"]
+      args: ["-c", "until nslookup backend-http.default.svc.cluster.local; do echo waiting for backend-http.default.svc.cluster.local; sleep 5s; done"]
+
+containers:
+  - image:
+      repository: mariomario77/hotelmanager-angular
+      pullPolicy: Always
+      tag: "1.0.0"
+      #args: ["--disable-host-check"]
+    ports:
+      - name: http
+        containerPort: 4200
+    volumeMounts: []
+      #- name: environment 
+      #  mountPath: /usr/src/app/src/environments
+      #  #subPath: environment.prod.ts
+    envFrom: []
+    livenessProbe:
+      tcpSocket:
+        port: 4200
+      timeoutSeconds: 1
+      periodSeconds: 10
+      successThreshold: 1
+      failureThreshold: 3
+      initialDelaySeconds: 10
+    readinessProbe:
+      tcpSocket:
+        port: 4200
+      timeoutSeconds: 1
+      periodSeconds: 10
+      successThreshold: 1
+      failureThreshold: 3
+      initialDelaySeconds: 10
+
+volumes: []
+
+configmaps: []
+
+secrets: []
+
+persistence:
+  storageClass: ""
+
+services:
+  - name: http
+    ports:
+      - port: 4200
+
+prometheus:
+  serviceMonitor:
+    enabled: false
+
+# Pod-level
+serviceAccount:
+  create: true
+  annotations: {}
+# If not set and create is true, a name is generated using the fullname template
+#  name: ""
+
+annotations: {}
+securityContext: {}
+nodeSelector: {}
+tolerations: []
+affinity: {}

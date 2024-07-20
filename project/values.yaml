@@ -1,0 +1,8 @@
+backend:
+  enabled: true
+
+frontend:
+  enabled: true
+
+psql: 
+  enabled: true

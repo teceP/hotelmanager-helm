@@ -1,0 +1,12 @@
+dependencies:
+- name: backend
+  repository: file://../backend
+  version: 0.1.0
+- name: frontend
+  repository: file://../frontend
+  version: 0.1.0
+- name: psql
+  repository: file://../psql
+  version: 0.1.0
+digest: sha256:4ff21a4a9cc6e4e9aff916cda87c598b8be25d743127fca736e2bba71f81fabd
+generated: "2024-07-20T23:23:07.8938773+02:00"

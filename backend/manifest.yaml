@@ -1,0 +1,110 @@
+---
+# Source: backend/templates/serviceaccount.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: release-name-backend
+  labels:
+    helm.sh/chart: backend-0.1.0
+    app.kubernetes.io/name: backend
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+---
+# Source: backend/templates/secret.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name:  databasepassword
+type: Opaque
+stringData:
+  SPRING_DATASOURCE_PASSWORD: cGFzcw==
+---
+# Source: backend/templates/statefulset.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: release-name-backend
+  labels:
+    helm.sh/chart: backend-0.1.0
+    app.kubernetes.io/name: backend
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: backend
+      app.kubernetes.io/instance: release-name
+  template:
+    metadata:
+      annotations:
+        checksum/configmap: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+        checksum/secret: 52a7d14bf5bb4f6c9bf576b426820c1493cc07111b53a608d44d0e7a944d6e61
+      labels:
+        app.kubernetes.io/name: backend
+        app.kubernetes.io/instance: release-name
+    spec:
+      serviceAccountName: release-name-backend
+      initContainers:
+        - name: backend-init-0          
+          image: "alpine:3.14"
+          imagePullPolicy: IfNotPresent
+          command:
+            - sh
+          args:
+            - -c
+            - until nslookup psql-hl; do echo waiting for psql-hl; sleep 1; done          
+          ports:
+          env:
+      containers:
+        - name: backend-0          
+          image: "mariomario77/hotelmanager-spring:1.0.0"
+          imagePullPolicy: IfNotPresent
+          command:
+            null
+          args:
+            null          
+          ports:
+            
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+            - name: actuator
+              containerPort: 8081
+              protocol: TCP
+          env:
+            - name: SPRING_DATASOURCE_URL
+              value: jdbc:postgresql://psql-hl:5432/hotelmanager
+            - name: SPRING_PROFILES_ACTIVE
+              value: PROD
+            - name: SPRING_DATASOURCE_USER
+              value: user
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom:
+                fieldRef:
+                  fieldPath: databasepassword.SPRING_DATASOURCE_PASSWORD      
+      volumes:
+---
+# Source: backend/templates/servicemonitor.yaml
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: release-name-backend-prometheus
+spec:
+  endpoints:
+  - interval: 5s
+    path: 
+    port: 
+    metricRelabelings:
+    - sourceLabels: [__name__]
+      targetLabel: __name__
+      replacement: $1
+  namespaceSelector:
+    matchNames:
+    - autobatteriemarkt
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: backend
+      app.kubernetes.io/instance: release-name
