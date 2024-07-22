@@ -31,20 +31,14 @@ containers:
         containerPort: 8081
     volumeMounts: []
     env:  
-      - name: SPRING_JPA_GENERATE_DDL
-        value: "true"
-      - name: LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_JDBC_DATASOURCE_INIT_DATASOURCEINITIALIZER
-        value: DEBUG
-      - name: SPRING_JPA_DEFER_DATASOURCE_INITIALIZATION
-        value: "true"
-      - name: SPRING_DATASOURCE_INITIALIZATION_MODE
-        value: always
       - name: SPRING_JPA_HIBERNATE_DDL_AUTO
-        value: create-drop
+        value: create
       - name: SPRING_DATASOURCE_URL
         value: jdbc:postgresql://psql-http.default.svc.cluster.local:5432/hotelmanager
+      - name: SPRING_JPA_SHOW_SQL
+        value: "true"
       - name: SPRING_PROFILES_ACTIVE
-        value: local
+        value: prod
       - name: SPRING_DATASOURCE_USERNAME
         value: user
       - name: SPRING_DATASOURCE_PASSWORD

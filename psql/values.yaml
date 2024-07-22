@@ -32,16 +32,32 @@ containers:
           secretKeyRef:
             name: psql-password
             key: POSTGRES_PASSWORD
-    volumeMounts:
-      - name: psql-data
-        mountPath: /var/lib/postgresql/data
+    #volumeMounts:
+    #  - name: psql-data
+    #    mountPath: /var/lib/postgresql/data
+    livenessProbe:
+      exec:
+        command: ["pg_isready", "-d", "hotelmanager", "-U", "user"]
+      timeoutSeconds: 1
+      periodSeconds: 10
+      successThreshold: 1
+      failureThreshold: 3
+      initialDelaySeconds: 10
+    readinessProbe:
+      exec:
+        command: ["pg_isready", "-d", "hotelmanager", "-U", "user"]
+      timeoutSeconds: 1
+      periodSeconds: 10
+      successThreshold: 1
+      failureThreshold: 3
+      initialDelaySeconds: 10
 
 volumes:
-  - name: psql-data
-    persistence:
-      accessModes:
-        - ReadWriteOnce
-      size: 1Gi
+  #- name: psql-data
+  #  persistence:
+  #    accessModes:
+  #      - ReadWriteOnce
+  #    size: 1Gi
 
 configmaps: []
 
@@ -64,7 +80,7 @@ prometheus:
 
 # Pod-level
 serviceAccount:
-  create: true
+  create: false
   annotations: {}
 # If not set and create is true, a name is generated using the fullname template
 #  name: ""
